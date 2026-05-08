@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama TUI Agent - 界面预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        
+        .tui-window {
+            background: #0f0f23;
+            border: 2px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+        }
+        
+        .header {
+            background: #16213e;
+            padding: 8px 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-title {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        
+        .header-status {
+            color: #4ade80;
+            font-size: 12px;
+        }
+        
+        .main-content {
+            display: flex;
+            height: 500px;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: #1a1a2e;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            background: #16213e;
+            padding: 10px;
+            color: #00d4ff;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+        }
+        
+        .session-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .session-item {
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            background: #0f0f23;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .session-item:hover {
+            background: #1e3a5f;
+        }
+        
+        .session-item.active {
+            background: #1e3a5f;
+            border-left: 3px solid #00d4ff;
+        }
+        
+        .session-title {
+            font-size: 13px;
+            color: #e0e0e0;
+        }
+        
+        .session-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .sidebar-buttons {
+            padding: 10px;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #00d4ff;
+            color: #0f0f23;
+        }
+        
+        .btn-primary:hover {
+            background: #33ddff;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #f87171;
+        }
+        
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .status-bar {
+            background: #16213e;
+            padding: 8px 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+        
+        .status-connected {
+            color: #4ade80;
+        }
+        
+        .status-model {
+            color: #fbbf24;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #0f0f23;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            max-width: 85%;
+        }
+        
+        .message-user {
+            background: #1e3a5f;
+            margin-left: auto;
+            border-left: 3px solid #00d4ff;
+        }
+        
+        .message-assistant {
+            background: #1a1a2e;
+            margin-right: auto;
+            border-left: 3px solid #4ade80;
+        }
+        
+        .message-header {
+            font-size: 12px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .message-user .message-header {
+            color: #00d4ff;
+        }
+        
+        .message-assistant .message-header {
+            color: #4ade80;
+        }
+        
+        .message-time {
+            color: #666;
+            font-size: 11px;
+        }
+        
+        .message-content {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #e0e0e0;
+        }
+        
+        .input-area {
+            background: #1a1a2e;
+            padding: 15px;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-field {
+            flex: 1;
+            background: #0f0f23;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px 15px;
+            color: #e0e0e0;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .input-field:focus {
+            border-color: #00d4ff;
+        }
+        
+        .send-btn {
+            padding: 10px 20px;
+            background: #00d4ff;
+            color: #0f0f23;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .send-btn:hover {
+            background: #33ddff;
+        }
+        
+        .shortcuts {
+            margin-top: 20px;
+            padding: 15px;
+            background: #16213e;
+            border-radius: 8px;
+        }
+        
+        .shortcuts h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .shortcut-key {
+            color: #fbbf24;
+            font-family: monospace;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ollama TUI Agent - 界面预览</h1>
+        
+        <div class="tui-window">
+            <!-- 顶部标题栏 -->
+            <div class="header">
+                <span class="header-title">Ollama TUI Agent</span>
+                <span class="header-status">● Connected</span>
+            </div>
+            
+            <!-- 主内容区 -->
+            <div class="main-content">
+                <!-- 左侧边栏 -->
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        会话列表
+                    </div>
+                    <div class="session-list">
+                        <div class="session-item active">
+                            <div class="session-title">Session 3</div>
+                            <div class="session-time">2026-05-08 14:30</div>
+                        </div>
+                        <div class="session-item">
+                            <div class="session-title">Session 2</div>
+                            <div class="session-time">2026-05-08 13:15</div>
+                        </div>
+                        <div class="session-item">
+                            <div class="session-title">Session 1</div>
+                            <div class="session-time">2026-05-08 11:20</div>
+                        </div>
+                    </div>
+                    <div class="sidebar-buttons">
+                        <button class="btn btn-primary">New</button>
+                        <button class="btn btn-danger">Delete</button>
+                    </div>
+                </div>
+                
+                <!-- 右侧聊天区 -->
+                <div class="chat-area">
+                    <!-- 状态栏 -->
+                    <div class="status-bar">
+                        <span class="status-connected">● Connected</span>
+                        <span class="status-model">Model: llama3.2</span>
+                    </div>
+                    
+                    <!-- 消息列表 -->
+                    <div class="messages">
+                        <div class="message message-user">
+                            <div class="message-header">
+                                <span>You</span>
+                                <span class="message-time">14:32</span>
+                            </div>
+                            <div class="message-content">
+                                你好，请帮我解释一下什么是Agent框架？
+                            </div>
+                        </div>
+                        
+                        <div class="message message-assistant">
+                            <div class="message-header">
+                                <span>Assistant</span>
+                                <span class="message-time">14:32</span>
+                            </div>
+                            <div class="message-content">
+                                Agent框架是一种用于构建自主AI代理的软件架构。它允许AI模型：
+                                <br><br>
+                                1. <strong>自主决策</strong> - 根据环境状态决定下一步行动<br>
+                                2. <strong>工具调用</strong> - 使用外部工具完成复杂任务<br>
+                                3. <strong>多轮对话</strong> - 维护上下文进行连续交互<br>
+                                4. <strong>协作能力</strong> - 多个Agent协同工作
+                                <br><br>
+                                常见的框架包括AutoGen、LangChain Agents等。
+                            </div>
+                        </div>
+                        
+                        <div class="message message-user">
+                            <div class="message-header">
+                                <span>You</span>
+                                <span class="message-time">14:33</span>
+                            </div>
+                            <div class="message-content">
+                                那AutoGen有什么特点？
+                            </div>
+                        </div>
+                        
+                        <div class="message message-assistant">
+                            <div class="message-header">
+                                <span>Assistant</span>
+                                <span class="message-time">14:33</span>
+                            </div>
+                            <div class="message-content">
+                                AutoGen是Microsoft开发的Agent框架，主要特点：
+                                <br><br>
+                                • <strong>多Agent对话</strong> - 支持多个Agent之间的自动协商<br>
+                                • <strong>可定制</strong> - 可以自定义Agent行为和对话模式<br>
+                                • <strong>人机协作</strong> - 支持人类参与Agent对话<br>
+                                • <strong>代码执行</strong> - Agent可以编写和执行代码<br>
+                                • <strong>工具集成</strong> - 轻松集成各种API和工具
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 输入区域 -->
+                    <div class="input-area">
+                        <input type="text" class="input-field" placeholder="输入消息... (Ctrl+Enter发送)">
+                        <button class="send-btn">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 快捷键说明 -->
+        <div class="shortcuts">
+            <h3>快捷键</h3>
+            <div class="shortcut-item">
+                <span>新建会话</span>
+                <span class="shortcut-key">Ctrl+N</span>
+            </div>
+            <div class="shortcut-item">
+                <span>清空聊天</span>
+                <span class="shortcut-key">Ctrl+K</span>
+            </div>
+            <div class="shortcut-item">
+                <span>切换模型</span>
+                <span class="shortcut-key">Ctrl+M</span>
+            </div>
+            <div class="shortcut-item">
+                <span>退出程序</span>
+                <span class="shortcut-key">Ctrl+Q</span>
+            </div>
+            <div class="shortcut-item">
+                <span>发送消息</span>
+                <span class="shortcut-key">Enter</span>
+            </div>
+        </div>
+        
+        <div class="footer">
+            Ollama TUI Agent - 基于AutoGen和Textual构建
+        </div>
+    </div>
+</body>
+</html>
